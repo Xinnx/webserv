@@ -34,15 +34,14 @@ impl<'a> HttpRequest<'a> {
         }
     }
 
+    //TODO: This needs to be refactored to only parse the http request and return the completed struct...valid or not
+    //by returning an Err(_) we mask the original request and cannot get anymore information out of it later
     fn parse_request(request: &str) -> Result<Box<HttpRequest>, HttpStatusCode> {
         let request = request.replace("\r\n", " ");
         let mut req_vec: Vec<&str> = request.split(' ').collect();
         for req in &mut req_vec {
             req.trim();
         }
-        //TODO: URI handling and validation
-        //Maybe this will stop directory transversal?
-        println!("file: {:?}", &req_vec[1]);
 
         if request.starts_with("GET") {
             if req_vec[1] == "/" {
@@ -62,10 +61,6 @@ impl<'a> HttpRequest<'a> {
             };
             let doc_root_path = PathBuf::from(&DOC_ROOT).canonicalize().unwrap();
 
-            println!(
-                "Requested file: {:?} -> doc root: {:?}",
-                &uri_path, &doc_root_path
-            );
             if !uri_path.starts_with(&doc_root_path) {
                 return Err(HttpStatusCode::BadRequest);
             }
@@ -100,7 +95,7 @@ impl<'a> HttpRequest<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 enum HttpMethod {
     GET,
@@ -151,6 +146,7 @@ Document root: {}",
         BIND_ADDR, DEFAULT_INDEX, NOTFOUND_PAGE, DOC_ROOT
     );
 
+    //TODO: add a thread pool for incoming connections.
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         handle_connection(stream);
@@ -188,16 +184,13 @@ fn handle_connection(mut stream: TcpStream) {
 
                 stream.flush().unwrap();
             }
-            _ => {
-                let response = format!(
-                    "{} {} {}\r\n\r\n",
-                    HTTP_PROTO_VERSION,
-                    HttpStatusCode::InternalServerError.value().0,
-                    HttpStatusCode::InternalServerError.value().1
-                );
-                stream.write(response.as_bytes()).unwrap();
-                stream.flush().unwrap();
-            }
+            HttpMethod::POST => {}
+            HttpMethod::DELETE => {}
+            HttpMethod::UPDATE => {}
+            HttpMethod::HEAD => {}
+            HttpMethod::OPTION => {}
+            HttpMethod::CONNECT => {}
+            HttpMethod::TRACE => {}
         },
         Err(ref e) if *e == HttpStatusCode::BadRequest => {
             let response = format!(
@@ -208,7 +201,7 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
-            println!("{:?}", e);
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
         Err(ref e) if *e == HttpStatusCode::Unauthorized => {
             let response = format!(
@@ -219,7 +212,7 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
-            println!("{:?}", e);
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
         Err(ref e) if *e == HttpStatusCode::Forbidden => {
             let response = format!(
@@ -230,6 +223,7 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
         Err(ref e) if *e == HttpStatusCode::NotFound => {
             let mut notfound_file = File::open(NOTFOUND_PAGE).unwrap();
@@ -245,6 +239,7 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
         Err(ref e) if *e == HttpStatusCode::NotImplemented => {
             let response = format!(
@@ -255,10 +250,10 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
-            println!("{:?}", e);
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
         Err(ref e) if *e == HttpStatusCode::InternalServerError => {}
-        Err(e) => {
+        Err(ref e) => {
             let response = format!(
                 "{} {} {}\r\n\r\n",
                 HTTP_PROTO_VERSION,
@@ -267,7 +262,7 @@ fn handle_connection(mut stream: TcpStream) {
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
-            println!("{:?}", e)
+            println!("received {:?}  from {} -> {:?}", e, stream.peer_addr().unwrap().ip(), e);
         }
     };
 }
