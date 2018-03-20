@@ -73,7 +73,7 @@ impl<'a> HttpRequest<'a> {
             return Ok(Box::new(HttpRequest::new(
                 HttpMethod::GET,
                 uri_path.to_str().unwrap(),
-                req_vec[2],
+                ::HTTP_PROTO_VERSION,
                 None,
             )));
         } else if request.starts_with("POST") {
