@@ -11,6 +11,8 @@ static BIND_ADDR: &str = "127.0.0.1:8080";
 static DOC_ROOT: &str = "C:/www";
 static DEFAULT_INDEX: &str = "index.html";
 static NOTFOUND_PAGE: &str = "404.html";
+
+//This project currently is referencing RFC 2616 for the implementation of HTTP/1.1, I wouldn't change this...
 static HTTP_PROTO_VERSION: &str = "HTTP/1.1";
 
 fn main() {

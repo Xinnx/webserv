@@ -34,38 +34,48 @@ impl<'a> HttpRequest<'a> {
             req.trim();
         }
 
+        //I am pretty sure all http requests have to specify at least the Method, URI, HTTP Protocol so the minimum length
+        //for a valid request should be 3
+        if req_vec.len() < 3 {
+            return Err(HttpStatusCode::BadRequest);
+        }
         if request.starts_with("GET") {
+
+            //Requesting http://example.com would result in GET / HTTP/1.1
+            //so we rewrite the request to the default index which is index.html -> GET index.html HTTP/1.1
             if req_vec[1] == "/" {
                 req_vec[1] = ::DEFAULT_INDEX;
             }
 
+            //Requesting http://example.com/afile.html would result in GET /afile.html HTTP/1.1
+            //we just chop off the / here so when we canonicalize it it doesn't look at the root of the drive
+            // ie /afile.html instead of ./afile.html
             if req_vec[1].starts_with('/') && req_vec[1].len() > 1 {
                 let mut s = req_vec[1];
                 s = &s[1..];
                 req_vec[1] = s;
             }
 
+            //Attempt to prevent directory recursion exploits hopfully and it has the added bonus
+            //of checking if the file exists so we can return a 404
             let uri_path = PathBuf::from(&req_vec[1]).canonicalize();
             let uri_path = match uri_path {
                 Ok(p) => p,
                 Err(_) => return Err(HttpStatusCode::NotFound),
             };
-            let doc_root_path = PathBuf::from(&::DOC_ROOT).canonicalize().unwrap();
 
+            //Check if the (canonical)file is in the allowed doc root path
+            let doc_root_path = PathBuf::from(&::DOC_ROOT).canonicalize().unwrap();
             if !uri_path.starts_with(&doc_root_path) {
                 return Err(HttpStatusCode::BadRequest);
             }
 
-            if req_vec.len() >= 3 && req_vec[2] == "HTTP/1.1" {
-                return Ok(Box::new(HttpRequest::new(
-                    HttpMethod::GET,
-                    uri_path.to_str().unwrap(),
-                    req_vec[2],
-                    None,
-                )));
-            } else {
-                return Err(HttpStatusCode::BadRequest);
-            }
+            return Ok(Box::new(HttpRequest::new(
+                HttpMethod::GET,
+                uri_path.to_str().unwrap(),
+                req_vec[2],
+                None,
+            )));
         } else if request.starts_with("POST") {
             return Err(HttpStatusCode::NotImplemented);
         } else if request.starts_with("UPDATE") {
