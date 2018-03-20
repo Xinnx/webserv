@@ -1,9 +1,9 @@
+mod http;
+
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
 use std::fs::File;
 use std::path::{Path, PathBuf};
-
-mod http;
 
 use http::{HttpMethod, HttpRequest, HttpStatusCode};
 
