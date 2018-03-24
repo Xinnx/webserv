@@ -70,98 +70,12 @@ fn handle_connection(mut stream: TcpStream) {
             HttpMethod::CONNECT => {}
             HttpMethod::TRACE => {}
         },
-        Err(ref e) if *e == HttpStatusCode::BadRequest => {
-            let response = format!(
-                "{} {} {}\r\n\r\n 400 - BAD REQUEST",
-                HTTP_PROTO_VERSION,
-                HttpStatusCode::BadRequest.value().0,
-                HttpStatusCode::BadRequest.value().1
-            );
-            stream.write(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-            println!(
-                "received {:?}  from {} -> {:?}",
-                e,
-                stream.peer_addr().unwrap().ip(),
-                e
-            );
-        }
-        Err(ref e) if *e == HttpStatusCode::Unauthorized => {
-            let response = format!(
-                "{} {} {}\r\n\r\n 401 - UNAUTHORIZED",
-                HTTP_PROTO_VERSION,
-                HttpStatusCode::Unauthorized.value().0,
-                HttpStatusCode::Unauthorized.value().1
-            );
-            stream.write(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-            println!(
-                "received {:?}  from {} -> {:?}",
-                e,
-                stream.peer_addr().unwrap().ip(),
-                e
-            );
-        }
-        Err(ref e) if *e == HttpStatusCode::Forbidden => {
-            let response = format!(
-                "{} {} {}\r\n\r\n 403 - FORBIDDEN",
-                HTTP_PROTO_VERSION,
-                HttpStatusCode::Forbidden.value().0,
-                HttpStatusCode::Forbidden.value().1
-            );
-            stream.write(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-            println!(
-                "received {:?}  from {} -> {:?}",
-                e,
-                stream.peer_addr().unwrap().ip(),
-                e
-            );
-        }
-        Err(ref e) if *e == HttpStatusCode::NotFound => {
-            let mut notfound_file = File::open(NOTFOUND_PAGE).unwrap();
-            let mut notfound_page = String::new();
-            notfound_file.read_to_string(&mut notfound_page).unwrap();
-
-            let response = format!(
-                "{} {} {}\r\n\r\n{}",
-                HTTP_PROTO_VERSION,
-                HttpStatusCode::NotFound.value().0,
-                HttpStatusCode::NotFound.value().1,
-                notfound_page
-            );
-            stream.write(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-            println!(
-                "received {:?}  from {} -> {:?}",
-                e,
-                stream.peer_addr().unwrap().ip(),
-                e
-            );
-        }
-        Err(ref e) if *e == HttpStatusCode::NotImplemented => {
-            let response = format!(
-                "{} {} {}\r\n\r\n",
-                HTTP_PROTO_VERSION,
-                HttpStatusCode::NotImplemented.value().0,
-                HttpStatusCode::NotImplemented.value().1
-            );
-            stream.write(response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-            println!(
-                "received {:?}  from {} -> {:?}",
-                e,
-                stream.peer_addr().unwrap().ip(),
-                e
-            );
-        }
-        Err(ref e) if *e == HttpStatusCode::InternalServerError => {}
         Err(ref e) => {
             let response = format!(
                 "{} {} {}\r\n\r\n",
                 HTTP_PROTO_VERSION,
-                HttpStatusCode::BadRequest.value().0,
-                HttpStatusCode::BadRequest.value().1
+                e.value().0,
+                e.value().1
             );
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
