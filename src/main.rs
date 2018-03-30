@@ -3,7 +3,7 @@ mod http;
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf
 
 use http::{HttpMethod, HttpRequest, HttpStatusCode};
 
@@ -18,10 +18,7 @@ static HTTP_PROTO_VERSION: &str = "HTTP/1.1";
 fn main() {
     let listener = TcpListener::bind(BIND_ADDR).unwrap();
     println!(
-        "Listening on {}
-Default index: {}
-Default 404 page: {}
-Document root: {}",
+        "Listening on {}\nDefault index: {}\nDefault 404 page: {}\nDocument root: {}",
         BIND_ADDR, DEFAULT_INDEX, NOTFOUND_PAGE, DOC_ROOT
     );
 

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 //TODO: prob should just make a HttpRequest structure with an option<T> for different types?
 #[derive(Debug)]
