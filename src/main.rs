@@ -3,12 +3,12 @@ mod http;
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
 use std::fs::File;
-use std::path::PathBuf
+use std::path::PathBuf;
 
 use http::{HttpMethod, HttpRequest, HttpStatusCode};
 
 static BIND_ADDR: &str = "127.0.0.1:8080";
-static DOC_ROOT: &str = "C:/www";
+static DOC_ROOT: &str = "/home/bclaus/webserv/www/";
 static DEFAULT_INDEX: &str = "index.html";
 static NOTFOUND_PAGE: &str = "404.html";
 
@@ -43,8 +43,7 @@ fn handle_connection(mut stream: TcpStream) {
                     &req
                 );
 
-                let f = PathBuf::from(&req.req_uri);
-                let mut index_file = File::open(&f).unwrap();
+                let mut index_file = File::open(&req.req_uri.file).unwrap();
                 let mut index_page = String::new();
                 index_file.read_to_string(&mut index_page).unwrap();
 

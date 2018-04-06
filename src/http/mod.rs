@@ -1,11 +1,27 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+
+#[derive(Debug)]
+pub struct ReqURI {
+    pub uri: String,
+    pub file: PathBuf
+}
+
+impl ReqURI {
+    fn new(uri: String, file: PathBuf) -> ReqURI {
+        ReqURI {
+            uri,
+            file
+        }
+    }
+}
+
 //TODO: prob should just make a HttpRequest structure with an option<T> for different types?
 #[derive(Debug)]
 pub struct HttpRequest<'a> {
     pub method: HttpMethod,
-    pub req_uri: String,
+    pub req_uri: ReqURI,
     pub proto_ver: String,
     pub req_headers: Option<Box<HashMap<&'a str, &'a str>>>,
 }
@@ -13,18 +29,21 @@ pub struct HttpRequest<'a> {
 impl<'a> HttpRequest<'a> {
     pub fn new(
         method: HttpMethod,
-        req_uri: &str,
+        req_uri: PathBuf,
         proto_ver: &str,
         req_headers: Option<Box<HashMap<&'a str, &'a str>>>,
     ) -> HttpRequest<'a> {
         HttpRequest {
             method,
-            req_uri: String::from(req_uri),
+            req_uri: ReqURI::new(req_uri.to_str().unwrap().replace(::DOC_ROOT, ""), req_uri),
             proto_ver: String::from(proto_ver),
             req_headers,
         }
     }
 
+    fn try_file(path: PathBuf) {
+
+    }
     //TODO: This needs to be refactored to only parse the http request and return the completed struct...valid or not
     //by returning an Err(_) we mask the original request and cannot get anymore information out of it later
     pub fn parse_request(request: &str) -> Result<Box<HttpRequest>, HttpStatusCode> {
@@ -40,7 +59,7 @@ impl<'a> HttpRequest<'a> {
             return Err(HttpStatusCode::BadRequest);
         }
         if request.starts_with("GET") {
-
+            println!("GET -> {:?}", &req_vec);
             //Requesting http://example.com would result in GET / HTTP/1.1
             //so we rewrite the request to the default index which is index.html -> GET index.html HTTP/1.1
             if req_vec[1] == "/" {
@@ -58,12 +77,13 @@ impl<'a> HttpRequest<'a> {
 
             //Attempt to prevent directory recursion exploits hopfully and it has the added bonus
             //of checking if the file exists so we can return a 404
-            let uri_path = PathBuf::from(&req_vec[1]).canonicalize();
+            let uri_path = PathBuf::from(format!("{}{}", ::DOC_ROOT,&req_vec[1])).canonicalize();
+            println!("uri: {:?}", &req_vec[1]);
+            println!("PathBuf: {:?}", &uri_path);
             let uri_path = match uri_path {
                 Ok(p) => p,
                 Err(_) => return Err(HttpStatusCode::NotFound),
             };
-
             //Check if the (canonical)file is in the allowed doc root path
             let doc_root_path = PathBuf::from(&::DOC_ROOT).canonicalize().unwrap();
             if !uri_path.starts_with(&doc_root_path) {
@@ -72,7 +92,7 @@ impl<'a> HttpRequest<'a> {
 
             return Ok(Box::new(HttpRequest::new(
                 HttpMethod::GET,
-                uri_path.to_str().unwrap(),
+                uri_path,
                 ::HTTP_PROTO_VERSION,
                 None,
             )));
